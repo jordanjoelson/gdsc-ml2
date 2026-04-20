@@ -232,6 +232,7 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
     for ep in range(1, num_episodes + 1):
         state, _ = env.reset()
         ep_reward = 0
+        ep_losses = [] 
 
         while True:
             # Agent picks an action based on current state
@@ -242,7 +243,9 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
             done = term or trunc
 
             # Agent stores experience and learns
-            agent.learn(state, action, reward, next_state, done)
+            loss = agent.learn(state, action, reward, next_state, done)
+            if loss is not None:
+                ep_losses.append(loss)
 
             state = next_state
             ep_reward += reward
