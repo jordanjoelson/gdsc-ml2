@@ -94,6 +94,8 @@ class DQNAgent:
         # Optimizer and memory 
         self.optimizer = optim.Adam(self.online.parameters(), lr=lr)
         self.buffer = ReplayBuffer(buffer_size)
+        self.losses = []
+        self.epsilons = []
 
     #  select_action(state)
     #  Input : np.ndarray of shape (8,)
@@ -177,6 +179,8 @@ class DQNAgent:
         loss.backward()              # compute new gradients
         nn.utils.clip_grad_norm_(self.online.parameters(), 10.0)  # prevent explosions
         self.optimizer.step()        # update weights
+        self.epsilons.append(self.eps)
+        self.losses.append(loss.item())
 
         # Step 8 — decay epsilon (less exploration over time)
         self.eps = max(self.eps_end, self.eps - self.eps_decay)
@@ -251,8 +255,9 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
         # Print progress every 25 episodes
         if ep % 25 == 0:
             avg = np.mean(all_rewards[-25:])  # average of last 25 episodes
+            avg_loss = np.mean(ep_losses) if ep_losses else 0.0
             print(f"Episode {ep:4d} | Reward: {ep_reward:8.1f} | "
-                  f"Avg(25): {avg:8.1f} | eps: {agent.eps:.3f}")
+                  f"Avg(25): {avg:8.1f} | Loss: {avg_loss:.4f} | eps: {agent.eps:.3f}")
 
     return all_rewards
 
