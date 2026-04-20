@@ -94,8 +94,6 @@ class DQNAgent:
         # Optimizer and memory 
         self.optimizer = optim.Adam(self.online.parameters(), lr=lr)
         self.buffer = ReplayBuffer(buffer_size)
-        self.losses = []
-        self.epsilons = []
 
     #  select_action(state)
     #  Input : np.ndarray of shape (8,)
@@ -179,8 +177,6 @@ class DQNAgent:
         loss.backward()              # compute new gradients
         nn.utils.clip_grad_norm_(self.online.parameters(), 10.0)  # prevent explosions
         self.optimizer.step()        # update weights
-        self.epsilons.append(self.eps)
-        self.losses.append(loss.item())
 
         # Step 8 — decay epsilon (less exploration over time)
         self.eps = max(self.eps_end, self.eps - self.eps_decay)
@@ -232,6 +228,7 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
     for ep in range(1, num_episodes + 1):
         state, _ = env.reset()
         ep_reward = 0
+        ep_losses = []
 
         while True:
             # Agent picks an action based on current state
@@ -242,7 +239,10 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
             done = term or trunc
 
             # Agent stores experience and learns
-            agent.learn(state, action, reward, next_state, done)
+            loss = agent.learn(state, action, reward, next_state, done)
+
+            if loss is not None:
+                ep_losses.append(loss)
 
             state = next_state
             ep_reward += reward
@@ -252,10 +252,11 @@ def train(env, agent: DQNAgent, num_episodes: int = 400):
 
         all_rewards.append(ep_reward)
 
+        avg_loss = np.mean(ep_losses) if ep_losses else 0.0
+
         # Print progress every 25 episodes
         if ep % 25 == 0:
             avg = np.mean(all_rewards[-25:])  # average of last 25 episodes
-            avg_loss = np.mean(ep_losses) if ep_losses else 0.0
             print(f"Episode {ep:4d} | Reward: {ep_reward:8.1f} | "
                   f"Avg(25): {avg:8.1f} | Loss: {avg_loss:.4f} | eps: {agent.eps:.3f}")
 
