@@ -56,14 +56,14 @@ class DQNAgent:
         self,
         state_dim:          int   = 8,
         action_dim:         int   = 4,
-        lr:                 float = 1e-3,     # how fast the network learns
+        lr:                 float = 1e-20,     # how fast the network learns
         gamma:              float = 0.99,     # how much future rewards matter
-        batch_size:         int   = 64,       # experiences per training step
+        batch_size:         int   = 128,       # experiences per training step
         buffer_size:        int   = 50_000,   # max experiences to remember
         target_update_freq: int   = 500,      # how often to sync target network
         eps_start:          float = 1.0,      # start fully random
         eps_end:            float = 0.01,     # end mostly greedy
-        eps_decay_steps:    int   = 10_000,   # steps to go from start → end
+        eps_decay_steps:    int   = 20_000,   # steps to go from start → end
         min_buffer:         int   = 1_000,    # don't train until buffer has this many
     ):
         self.state_dim = state_dim
@@ -147,6 +147,7 @@ class DQNAgent:
         # Step 2 — only start training once we have enough memories
         if len(self.buffer) < self.min_buffer:
             return None
+        # min size be greater than batch size
 
         # Step 3 — randomly sample a batch of past experiences
         states, actions, rewards, next_states, dones = self.buffer.sample(self.batch_size)
@@ -301,6 +302,7 @@ if __name__ == "__main__":
     print("── Verifying state → action mapping ──")
     env = gym.make("LunarLander-v3")
     test_state, _ = env.reset()
+    env.close()
 
     print(f"  State shape  : {test_state.shape}")   # should be (8,)
     print(f"  State values : {np.round(test_state, 3)}")
@@ -328,7 +330,7 @@ if __name__ == "__main__":
     )
 
     print("── Training ──")
-    rewards = train(env, agent, num_episodes=800)
+    rewards = train(env, agent, num_episodes=1000)
     env.close()
 
     # Save 
