@@ -1,88 +1,87 @@
-import os
-import pickle
-import numpy as np
 import gymnasium as gym
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.training.random_agent import RandomAgent
+import numpy as np
+
+from src.dqn_agent import DQNAgent
 from src.evaluation.plot_rewards import plot_rewards
 
-def run_agent_training(num_episodes=100, checkpoint_every=25):
-    # Create the LunarLander environment
+
+def train(num_episodes=800):
+    """
+    Main training loop for DQN agent.
+
+    This function:
+    - Creates environment
+    - Runs episodes
+    - Collects rewards
+    - Saves checkpoints at different training stages
+    - Returns reward history for visualization
+    """
+
+    # Create environment (LunarLander-v3 is the updated version)
     env = gym.make("LunarLander-v3")
 
-    # ── Task: Plug the agent into the training loop ──
-    agent = RandomAgent(state_dim=8, action_dim=4)
+    # Initialize agent
+    agent = DQNAgent()
 
-    # List to store total reward for each episode
-    rewards_per_episode = []
+    # Store episode rewards for plotting
+    rewards = []
 
-    # Create folder to save checkpoints
-    os.makedirs("checkpoints", exist_ok=True)
+    # Loop over episodes
+    for ep in range(num_episodes):
 
-    # ── Task: Run multiple episodes for training ──
-    for episode in range(num_episodes):
-
-        # Reset environment at the start of each episode
+        # Reset environment at start of episode
         state, _ = env.reset()
 
-        # Track total reward for this episode
-        total_reward = 0
+        episode_reward = 0
 
-        # Flag to check if episode is finished
-        done = False
-
-        # Run one full episode
-        while not done:
-
-            # ── Agent picks action (not random anymore) ──
+        while True:
+            # Select action using epsilon-greedy policy
             action = agent.select_action(state)
 
-            # Take the action and get results
+            # Step environment
             next_state, reward, terminated, truncated, _ = env.step(action)
 
-            # ── Agent learns from this step ──
-            agent.learn(state, action, reward, next_state, terminated or truncated)
+            done = terminated or truncated
 
-            # Add reward to total
-            total_reward += reward
+            # Train agent using experience
+            agent.learn(state, action, reward, next_state, done)
 
             # Move to next state
             state = next_state
+            episode_reward += reward
 
-            # Check if episode is finished
-            done = terminated or truncated
+            if done:
+                break
 
-        # Save total reward for this episode
-        rewards_per_episode.append(total_reward)
+        # Store reward
+        rewards.append(episode_reward)
 
-        # ── Task: Log total and average rewards per episode ──
-        avg_reward = np.mean(rewards_per_episode)
-        print(f"Episode {episode + 1}: Reward = {total_reward:.1f} | Avg so far = {avg_reward:.1f}")
+        # Print progress every 25 episodes
+        if ep % 25 == 0:
+            avg = np.mean(rewards[-25:])
+            print(f"Episode {ep} | Reward: {episode_reward:.2f} | Avg(25): {avg:.2f}")
 
-        # ── Task: Save checkpoints every N episodes ──
-        if (episode + 1) % checkpoint_every == 0:
-            checkpoint_path = f"checkpoints/agent_ep{episode + 1}.pkl"
-            with open(checkpoint_path, "wb") as f:
-                pickle.dump(agent, f)
-            print(f"  ✓ Checkpoint saved → {checkpoint_path}")
+        # -------------------------------
+        # CHECKPOINT SAVING (FIX ADDED)
+        # -------------------------------
 
-    # Close the environment
+        if ep == 100:
+            agent.save_model("dqn_early.pth")
+
+        if ep == 400:
+            agent.save_model("dqn_mid.pth")
+
+        if ep == num_episodes - 1:
+            agent.save_model("dqn_final.pth")
+
     env.close()
 
-    # Final summary
-    print(f"\nTraining complete!")
-    print(f"Total episodes : {num_episodes}")
-    print(f"Average reward : {np.mean(rewards_per_episode):.1f}")
-    print(f"Best episode   : {max(rewards_per_episode):.1f}")
-
-    return rewards_per_episode
+    return rewards
 
 
 if __name__ == "__main__":
+    # Run training
+    rewards = train()
 
-    # Run training for 100 episodes, save checkpoint every 25
-    rewards = run_agent_training(num_episodes=100, checkpoint_every=25)
-
-    # Plot the rewards to visualize performance
+    # Plot results
     plot_rewards(rewards)
