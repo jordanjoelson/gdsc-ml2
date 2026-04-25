@@ -1,4 +1,4 @@
-#!/Users/fizzarizvi/lunar/bin/python3.11
+#!/Users/fizzarizvi/gdsc-ml2-1/bin/python
 import sys
 from swig import swig
 if __name__ == '__main__':
