@@ -15,3 +15,14 @@ ACTION_MEANINGS = {
     2: "fire main engine",
     3: "fire right orientation engine"
 }
+
+def print_env_info():
+    print("\n=== LunarLander Environment Info ===")
+
+    print("\nState Variables:")
+    for i, name in enumerate(STATE_NAMES):
+        print(f"{i}: {name}")
+
+    print("\nActions:")
+    for k, v in ACTION_MEANINGS.items():
+        print(f"{k}: {v}")
