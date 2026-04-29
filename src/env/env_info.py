@@ -16,13 +16,27 @@ ACTION_MEANINGS = {
     3: "fire right orientation engine"
 }
 
+REWARD_DESCRIPTION = [
+    "Reward increases as the lander gets closer to the landing pad.",
+    "Reward increases for reducing velocity (slower movement is better).",
+    "Reward increases for keeping the lander upright (low angle).",
+    "Successful landing gives a large positive reward.",
+    "Crashing results in a large negative reward.",
+    "Using engines consumes fuel and may reduce reward slightly."
+]
+
+
 def print_env_info():
     print("\n=== LunarLander Environment Info ===")
 
-    print("\nState Variables:")
+    print("\nState Variables (8 values):")
     for i, name in enumerate(STATE_NAMES):
         print(f"{i}: {name}")
 
-    print("\nActions:")
-    for k, v in ACTION_MEANINGS.items():
-        print(f"{k}: {v}")
+    print("\nActions (0–3):")
+    for action, meaning in ACTION_MEANINGS.items():
+        print(f"{action}: {meaning}")
+
+    print("\nReward Behavior:")
+    for line in REWARD_DESCRIPTION:
+        print(f"- {line}")

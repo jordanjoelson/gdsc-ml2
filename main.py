@@ -20,13 +20,20 @@ def main():
         run_demo()
 
     elif args.mode == "plot":
-        history, rewards, total_reward = collect_episode_data()
+        history, rewards, total_reward, step_count = collect_episode_data()
+        print(f"Steps: {step_count}")
         print(f"Total Reward: {total_reward:.2f}")
 
         plot_main_states(history)
         plot_angle_states(history)
         plot_leg_contacts(history)
         plot_reward_curve(rewards)
+
+        print(f"Final x_position: {history[0][-1]:.3f}")
+        print(f"Final y_position: {history[1][-1]:.3f}")
+        print(f"Final angle: {history[4][-1]:.3f}")
+        print(f"Left leg contact ever occurred: {1 in history[6]}")
+        print(f"Right leg contact ever occurred: {1 in history[7]}")
 
     elif args.mode == "info":
         print_env_info()
