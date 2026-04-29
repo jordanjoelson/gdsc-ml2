@@ -328,14 +328,14 @@ if __name__ == "__main__":
     )
 
     print("── Training ──")
-    rewards = train(env, agent, num_episodes=800)
+    rewards = train(env, agent, num_episodes=200)
     env.close()
 
     # Save 
     agent.save_model("dqn_lunarlander.pth")
 
     # Test
-    env = gym.make("LunarLander-v3")
+    env = gym.make("LunarLander-v3", render_mode="human")
     test(env, agent, num_episodes=10)
     env.close()
 
@@ -343,6 +343,6 @@ if __name__ == "__main__":
     fresh_agent = DQNAgent()
     fresh_agent.load_model("dqn_lunarlander.pth")
 
-    env = gym.make("LunarLander-v3")
+    env = gym.make("LunarLander-v3", render_mode="human")
     test(env, fresh_agent, num_episodes=5)
     env.close()

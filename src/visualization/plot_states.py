@@ -1,9 +1,10 @@
 import gymnasium as gym
 import matplotlib.pyplot as plt
 from src.env.env_info import STATE_NAMES
+from src.dqn_agent import DQNAgent
 
 
-def collect_episode_data(env_name="LunarLander-v3"):
+def collect_episode_data(agent=None, env_name="LunarLander-v3"):
     env = gym.make(env_name)
     obs, info = env.reset()
 
@@ -17,7 +18,10 @@ def collect_episode_data(env_name="LunarLander-v3"):
         for i, val in enumerate(obs):
             history[i].append(val)
 
-        action = env.action_space.sample()  # random baseline
+        if agent is None:
+            action = env.action_space.sample()  # random baseline
+        else:
+            action = agent.select_action(obs)
         obs, reward, terminated, truncated, info = env.step(action)
 
         rewards.append(reward)
@@ -78,7 +82,10 @@ def plot_reward_curve(rewards):
 
 
 if __name__ == "__main__":
-    history, rewards, total_reward, step_count = collect_episode_data()
+    agent = DQNAgent()
+    agent.load_model("dqn_lunarlander.pth")
+
+    history, rewards, total_reward, step_count = collect_episode_data(agent=agent)
     print(f"Steps: {step_count}")
     print(f"Total Reward: {total_reward:.2f}")
 
