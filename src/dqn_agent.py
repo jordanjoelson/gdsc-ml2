@@ -5,6 +5,7 @@ import torch.optim as optim
 import random
 import os
 from collections import deque
+from evaluation.plot_rewards import plot_rewards
 
 class QNetwork(nn.Module):
     def __init__(self, state_dim: int = 8, action_dim: int = 4, hidden: int = 128):
@@ -224,44 +225,52 @@ class DQNAgent:
 
 def train(env, agent: DQNAgent, num_episodes: int = 400):
     """Run the full training loop and return per-episode rewards."""
-    all_rewards = []
+    rewards = []
 
     for ep in range(1, num_episodes + 1):
+
         state, _ = env.reset()
-        ep_reward = 0
-        ep_losses = [] 
+        episode_reward = 0
+        ep_losses = []
 
         while True:
-            # Agent picks an action based on current state
             action = agent.select_action(state)
 
-            # Environment reacts
-            next_state, reward, term, trunc, _ = env.step(action)
-            done = term or trunc
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
 
-            # Agent stores experience and learns
+            # Capture loss (your addition)
             loss = agent.learn(state, action, reward, next_state, done)
             if loss is not None:
                 ep_losses.append(loss)
 
             state = next_state
-            ep_reward += reward
+            episode_reward += reward
 
             if done:
                 break
 
-        all_rewards.append(ep_reward)
+        rewards.append(episode_reward)
 
+        # Compute avg loss (your addition)
         avg_loss = np.mean(ep_losses) if ep_losses else 0.0
 
-        # Print progress every 25 episodes
+        # Improved logging (merged both)
         if ep % 25 == 0:
-            avg = np.mean(all_rewards[-25:])  # average of last 25 episodes
-            print(f"Episode {ep:4d} | Reward: {ep_reward:8.1f} | "
-                  f"Avg(25): {avg:8.1f} | Loss: {avg_loss:.4f} | eps: {agent.eps:.3f}")
+            avg_reward = np.mean(rewards[-25:])
+            print(
+                f"Episode {ep:4d} | Reward: {episode_reward:8.1f} | "
+                f"Avg(25): {avg_reward:8.1f} | "
+                f"Loss: {avg_loss:.4f} | eps: {agent.eps:.3f}"
+            )
 
-    return all_rewards
+        if ep == num_episodes * 0.10:
+            agent.save_model("dqn_early.pth")
 
+        if ep == num_episodes * 0.50:
+            agent.save_model("dqn_mid.pth")
+
+    return rewards
 
 def test(env, agent: DQNAgent, num_episodes: int = 10):
     """
@@ -330,21 +339,15 @@ if __name__ == "__main__":
     )
 
     print("── Training ──")
-    rewards = train(env, agent, num_episodes=1000)
+    rewards = train(env, agent, num_episodes=2000)
     env.close()
 
     # Save 
     agent.save_model("dqn_lunarlander.pth")
 
     # Test
-    env = gym.make("LunarLander-v3")
+    env = gym.make("LunarLander-v3", render_mode="human")
     test(env, agent, num_episodes=10)
     env.close()
 
-    print("\n── Reloading model from disk and retesting ──")
-    fresh_agent = DQNAgent()
-    fresh_agent.load_model("dqn_lunarlander.pth")
-
-    env = gym.make("LunarLander-v3")
-    test(env, fresh_agent, num_episodes=5)
-    env.close()
+    plot_rewards(rewards)
