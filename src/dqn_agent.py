@@ -296,10 +296,14 @@ def test(env, agent: DQNAgent, num_episodes: int = 10):
     return rewards
 
 if __name__ == "__main__":
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
     import gymnasium as gym
 
     # Verify state → action mapping 
-    print("── Verifying state → action mapping ──")
+    print("-- Verifying state -> action mapping --")
     env = gym.make("LunarLander-v3")
     test_state, _ = env.reset()
 
@@ -328,15 +332,35 @@ if __name__ == "__main__":
         min_buffer = 1_000,
     )
 
-    print("── Training ──")
-    rewards = train(env, agent, num_episodes=200)
+    print("-- Training --")
+    training_rewards = train(env, agent, num_episodes=100)
     env.close()
 
     # Save 
     agent.save_model("dqn_lunarlander.pth")
 
-    # Plot trained agent behavior
-    print("\n── Plotting trained agent behavior ──")
+    # Plot training metrics
+    print("\n-- Plotting training metrics --")
+    
+    def plot_training_rewards(all_rewards):
+        plt.figure(figsize=(12, 6))
+        plt.plot(all_rewards, alpha=0.6, label="Episode Reward")
+        # Moving average
+        window = 10
+        moving_avg = [np.mean(all_rewards[max(0, i-window):i+1]) for i in range(len(all_rewards))]
+        plt.plot(moving_avg, linewidth=2, label=f"Moving Avg ({window} episodes)")
+        plt.xlabel("Episode")
+        plt.ylabel("Total Reward")
+        plt.title("Training Progress: Reward Per Episode")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+    
+    plot_training_rewards(training_rewards)
+    
+    # Collect final episode to visualize
+    print("-- Plotting final episode behavior --")
     from src.env.env_info import STATE_NAMES
     
     def collect_episode_data(agent=None, env_name="LunarLander-v3"):
@@ -401,25 +425,24 @@ if __name__ == "__main__":
         plt.figure(figsize=(10, 6))
         plt.plot(rewards)
         plt.xlabel("Time Step")
-        plt.ylabel("Reward")
-        plt.title("Reward Per Step")
+        plt.ylabel("Reward Per Step")
+        plt.title("Reward Per Step in Final Episode")
         plt.tight_layout()
         plt.show()
     
-    history, rewards, total_reward, step_count = collect_episode_data(agent=agent)
-    print(f"Steps: {step_count}")
-    print(f"Total Reward: {total_reward:.2f}")
+    history, episode_rewards, total_reward, step_count = collect_episode_data(agent=agent)
+    print(f"Final episode - Steps: {step_count}, Total Reward: {total_reward:.2f}")
     plot_main_states(history)
     plot_angle_states(history)
     plot_leg_contacts(history)
-    plot_reward_curve(rewards)
+    plot_reward_curve(episode_rewards)
 
     # Test
     env = gym.make("LunarLander-v3", render_mode="human")
     test(env, agent, num_episodes=10)
     env.close()
 
-    print("\n── Reloading model from disk and retesting ──")
+    print("\n-- Reloading model from disk and retesting --")
     fresh_agent = DQNAgent()
     fresh_agent.load_model("dqn_lunarlander.pth")
 
