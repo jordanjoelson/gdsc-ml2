@@ -13,7 +13,7 @@ This project implements a complete reinforcement learning pipeline for the Lunar
 
 ### Goal
 
-Train an agent to safely land a lunar module between two landing pad flags with minimal fuel consumption and stable balance.
+Train an agent to safely land a lunar module between two landing pad flags with minimal fuel consumption and stable balance. 
 
 ---
 
